@@ -1,57 +1,59 @@
-# =========================
 # Python
-# =========================
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
+*$py.class
 
-# Virtual environment
+# Virtual Environment
 venv/
-.env/
 .venv/
+env/
 
-# =========================
 # Environment variables
-# =========================
 .env
 
-# =========================
-# PyInstaller
-# =========================
+# Database
+*.db
+*.sqlite3
+
+# Build files
 build/
 dist/
 *.spec
 
-# =========================
-# Model files (ถ้าไม่อยาก push)
-# =========================
+# Model / ML artifacts
 *.pkl
 *.joblib
+*.h5
+*.pt
+*.pth
 
-# (ถ้าคุณอยากเก็บ model ใน repo ให้ลบบรรทัดนี้ออก)
-
-# =========================
-# Logs
-# =========================
-*.log
-
-# =========================
-# OS / Editor
-# =========================
-.DS_Store
-Thumbs.db
+# IDE
 .vscode/
 .idea/
 
-# =========================
-# Docker
-# =========================
-*.tar
-*.gz
+# OS
+.DS_Store
+Thumbs.db
 
-# =========================
-# Database / volume (เผื่อ)
-# =========================
-*.sqlite3
-postgres_data/
+# Pytest
+.pytest_cache/
+
+# Mypy
+.mypy_cache/
+
+# Coverage
+.coverage
+htmlcov/
+
+# Logs
+*.log
+
+# FastAPI / Uvicorn
+*.pid
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Temporary files
+*.tmp
+*.temp
