@@ -1,5 +1,6 @@
 from sqlalchemy import JSON, Column, Integer, Float, Boolean, String, ForeignKey
-from .database import Base
+# from .database import Base
+from database import Base
 
 class PuzzlesDB(Base):
     __tablename__ = "puzzles"
