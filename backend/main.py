@@ -5,10 +5,13 @@ from sqlalchemy.orm import Session
 from fastapi import FastAPI, Depends
 
 
-from .database import Base, engine, SessionLocal, get_db
-from .schema import PuzzleResponse, LogCreate, LogInput, LogResponse, HitRecordResponse, Avg_AB_Response
-from .models import HitRecordDB, LogsDB, PuzzlesDB, AvgABDB
+# from .database import Base, engine, SessionLocal, get_db
+# from .schema import PuzzleResponse, LogCreate, LogInput, LogResponse, HitRecordResponse, Avg_AB_Response
+# from .models import HitRecordDB, LogsDB, PuzzlesDB, AvgABDB
 
+from database import Base, engine, get_db
+from schema import PuzzleResponse, LogCreate, LogInput, LogResponse, HitRecordResponse, Avg_AB_Response
+from models import HitRecordDB, LogsDB, PuzzlesDB, AvgABDB
 
 
 app = FastAPI()
