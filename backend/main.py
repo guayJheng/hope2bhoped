@@ -16,6 +16,9 @@ from models import HitRecordDB, LogsDB, PuzzlesDB, AvgABDB
 
 app = FastAPI()
 
+@app.get("/wake-up")
+def wake_up():
+    return {"status": "ok"}
 
 @app.get("/get-puzzles", response_model=List[PuzzleResponse])
 def get_puzzles(db: Session = Depends(get_db)):
