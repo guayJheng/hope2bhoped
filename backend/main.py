@@ -1,5 +1,7 @@
+import subprocess,sys,os,pickle,requests
 from typing import List
 import numpy as np
+from pathlib import Path
 from sqlalchemy import func, select,   text
 from sqlalchemy.orm import Session
 
@@ -11,8 +13,38 @@ from fastapi import FastAPI, Depends
 # from .models import HitRecordDB, LogsDB, PuzzlesDB, AvgABDB, StatDataDB
 
 from database import Base, engine, get_db
-from schema import LogInputBase, PuzzleResponse, LogCreate, LogInput, LogResponse, HitRecordResponse, Avg_AB_Response, GetNextPuzzleResponse
+from schema import LogInputBase, PuzzleResponse, LogCreate, LogResponse, HitRecordResponse, Avg_AB_Response, GetNextPuzzleResponse
 from models import HitRecordDB, LogsDB, PuzzlesDB, AvgABDB, StatDataDB
+
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+TRAIN_PATH = BASE_DIR / "train.py"
+
+def load_model():
+    model_url = os.getenv("MODEL_URL")
+
+    response = requests.get(model_url)
+    response.raise_for_status()
+
+    return pickle.loads(response.content)
+
+model = load_model()
+
+weights = model["weights"]
+
+w0, w1, w2 = weights
+
+print("Model loaded with weights:", weights)
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+    
+def z_dist(w1, w2, w3, zT, zA, zMTq):
+    return np.sqrt(
+        w1 * (zT ** 2) +
+        w2 * (zA ** 2) +
+        w3 * (zMTq ** 2)
+    )
 
 
 app = FastAPI()
@@ -21,6 +53,21 @@ app = FastAPI()
 def wake_up():
     return {"status": "ok"}
 
+@app.get("/train-model")
+def train_model():
+    global model, weights, w0, w1, w2
+    subprocess.run(
+        [sys.executable, str(TRAIN_PATH)],
+        check=True
+    )
+    model = load_model()
+    weights = model["weights"]
+    w0, w1, w2 = weights
+    print("Reloaded weights:", weights)
+    return {
+        "status": "trained",
+        "weights": weights.tolist()
+    }
 @app.get("/get-puzzles", response_model=List[PuzzleResponse])
 def get_puzzles(db: Session = Depends(get_db)):
     db_item = db.query(PuzzlesDB).all()
@@ -80,6 +127,8 @@ def get_next_puzzle(
     stat_data = (
         db.query(StatDataDB).filter(StatDataDB.pzid == body.pzid).first()
     )
+    if stat_data is None:
+        return {"status_code": 404, "detail": "Stat data not found"}
 
     # z-score
 
@@ -93,14 +142,14 @@ def get_next_puzzle(
     avg_ab = (
         db.query(AvgABDB).filter(AvgABDB.pzid == body.pzid).first()
     )
+    if avg_ab is None:
+        return {"detail": "AvgAB not found"}
+
     avg_a_list = avg_ab.list_avg_a
     avg_b_list = avg_ab.list_avg_b
 
-    for i in range(len(body.fitts_ids)):
-        mt = (
-            avg_a_list[i]
-            + (avg_b_list[i] * body.fitts_ids[i])
-        )
+    for a, b, fid in zip(avg_a_list, avg_b_list, body.fitts_ids):
+        mt = a + (b * fid)
         mt_list.append(mt)
     mtp = np.percentile(mt_list, 75)
 
@@ -110,24 +159,10 @@ def get_next_puzzle(
     z_mtp = z_score(mtp, stat_data.avg_mtp, stat_data.sd_mtp)
 
     #P(fail)
-    def sigmoid(x):
-        return 1 / (1 + np.exp(-x))
-    
-    def z_dist(w1, w2, w3, zT, zA, zMTq):
-        return np.sqrt(
-        w1 * (zT ** 2) +
-        w2 * (zA ** 2) +
-        w3 * (zMTq ** 2)
-    )
-
-    p_fail = sigmoid(0.5 * ( z_dist(2,3,5,z_t,z_a,z_mtp) - 1.0))
+    p_fail = sigmoid(0.5 * ( z_dist(w1,w2,w3,z_t,z_a,z_mtp) - 1.0))
     
     #expected_total_damage
-    prob_hit = (
-        db.query(HitRecordDB.prob_hit)
-        .filter(HitRecordDB.pzid == body.pzid)
-        .first()[0]
-    )
+
     expected_total_damage = prob_hit * current_puzzle.total_hit * current_puzzle.dmg_per_hit
     
     # risk scaler
@@ -156,6 +191,7 @@ def get_next_puzzle(
         "dmg_per_hit": next_puzzle.dmg_per_hit,
         "next_puzzle_diff": float(next_puzzle_diff)
     }
+    print("w:", w0 , w1 , w2 , w3)
     print(risk_scaler)
     return db_item
 
