@@ -34,7 +34,6 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run training
-        working-directory: backend
         env:
           SQLALCHEMY_DATABASE_URL: ${{ secrets.SQLALCHEMY_DATABASE_URL }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
