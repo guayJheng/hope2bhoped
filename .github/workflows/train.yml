@@ -1,0 +1,30 @@
+name: Train Model Daily
+
+on:
+  schedule:
+    # - cron: "0 17 * * *"  # 00:00 Thailand (UTC+7)
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run training
+        run: python train.py
+
+      - name: Reload API model
+        if: success()
+        run: curl -f https://rope.onrender.com/reload-model
