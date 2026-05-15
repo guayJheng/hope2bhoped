@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+import numpy as np
 
 #Pydantic model for request body
 class LogBase(BaseModel):
@@ -40,13 +41,7 @@ class LogInputBase(BaseModel):
 class LogCreate(LogBase):
     pass
 
-# class PuzzleCreate(PuzzleBase):
-#     pass
-
-# class AvgABCreate(AvgABBase):
-#     pass
-
-class LogInput(LogInputBase):
+class LogInputBase(LogInputBase):
     pass
 
 # Response
@@ -81,4 +76,12 @@ class Avg_AB_Response(BaseModel):
     list_avg_b: list[float]
     class Config:
         from_attributes = True
+
+class GetNextPuzzleResponse(BaseModel):
+    pzid: int
+    name: str
+    base_diff: float
+    total_hit: int
+    dmg_per_hit: float
+    next_puzzle_diff: float
 

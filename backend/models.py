@@ -1,5 +1,6 @@
 from sqlalchemy import JSON, Column, Integer, Float, Boolean, String, ForeignKey
-from .database import Base
+# from .database import Base
+from backend.database import Base
 
 class PuzzlesDB(Base):
     __tablename__ = "puzzles"
@@ -27,8 +28,8 @@ class AvgABDB(Base):
     __tablename__ = "avg_ab"
 
     pzid = Column(Integer, primary_key=True, index=True)
-    list_avg_a = Column(JSON)
-    list_avg_b = Column(JSON)
+    list_avg_a = Column(Float)
+    list_avg_b = Column(Float)
 
 class HitRecordDB(Base):
     __tablename__ = "hit_record"
@@ -46,3 +47,14 @@ class LogInputDB(Base):
     hit_count = Column(Integer)
     fitts_ids = Column(JSON)
     result = Column(Boolean)
+
+class StatDataDB(Base):
+    __tablename__ = "stat_data"
+
+    pzid = Column(Integer, primary_key=True, index=True)
+    avg_t = Column(Float)
+    avg_a = Column(Float)
+    avg_mtp = Column(Float)
+    sd_t = Column(Float)
+    sd_a = Column(Float)
+    sd_mtp = Column(Float)
