@@ -2,8 +2,8 @@ name: Train Model Daily
 
 on:
   schedule:
-    - cron: "18 21 * * *"
-  workflow_dispatch:
+  - cron: "*/5 * * * *"
+
 jobs:
   train:
     runs-on: ubuntu-latest
