@@ -2,7 +2,7 @@ name: Train Model Daily
 
 on:
   schedule:
-    - cron: "0 21 * * *"
+    - cron: "18 21 * * *"
   workflow_dispatch:
 jobs:
   train:
@@ -37,4 +37,4 @@ jobs:
 
       - name: Reload API model
         if: success()
-        run: curl -f https://hope2bhoped.onrender.com/reload-model
+        run: curl -X GET https://hope2bhoped.onrender.com/reload-model
