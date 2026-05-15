@@ -1,17 +1,18 @@
 from typing import List
-
+import numpy as np
+from sqlalchemy import func, select,   text
 from sqlalchemy.orm import Session
 
 from fastapi import FastAPI, Depends
 
 
 # from .database import Base, engine, SessionLocal, get_db
-# from .schema import PuzzleResponse, LogCreate, LogInput, LogResponse, HitRecordResponse, Avg_AB_Response
-# from .models import HitRecordDB, LogsDB, PuzzlesDB, AvgABDB
+# from .schema import LogInputBase, PuzzleResponse, LogCreate, LogResponse, HitRecordResponse, Avg_AB_Response, GetNextPuzzleResponse
+# from .models import HitRecordDB, LogsDB, PuzzlesDB, AvgABDB, StatDataDB
 
 from database import Base, engine, get_db
-from schema import PuzzleResponse, LogCreate, LogInput, LogResponse, HitRecordResponse, Avg_AB_Response
-from models import HitRecordDB, LogsDB, PuzzlesDB, AvgABDB
+from schema import LogInputBase, PuzzleResponse, LogCreate, LogInput, LogResponse, HitRecordResponse, Avg_AB_Response, GetNextPuzzleResponse
+from models import HitRecordDB, LogsDB, PuzzlesDB, AvgABDB, StatDataDB
 
 
 app = FastAPI()
@@ -42,10 +43,6 @@ def get_hit_record(pzid: int ,db: Session = Depends(get_db)):
     db_item = db.query(HitRecordDB).filter(HitRecordDB.pzid == pzid).first()
     return db_item
 
-@app.post("/get-next-puzzle", response_model=PuzzleResponse)
-def get_next_puzzle(log_input: LogInput, db: Session = Depends(get_db)):
-    db_item = ...
-    return db_item
 
 @app.post("/add-log", response_model=LogResponse) 
 def add_log(log: LogCreate, db: Session = Depends(get_db)):
@@ -54,6 +51,112 @@ def add_log(log: LogCreate, db: Session = Depends(get_db)):
     db.add(db_item)
     db.commit()
     db.refresh(db_item)
+    return db_item
+
+
+@app.post("/get-next-puzzle", response_model=GetNextPuzzleResponse)
+def get_next_puzzle(
+    body: LogInputBase,
+    db: Session = Depends(get_db)
+):
+
+    # current puzzle
+    current_puzzle = (
+        db.query(PuzzlesDB).filter(PuzzlesDB.pzid == body.pzid).first()
+    )
+    if not current_puzzle:
+        return {"status_code": 404, "detail": "Puzzle not found"}
+
+    # prob_hit
+    prob_hit = (
+        db.query(HitRecordDB.prob_hit)
+        .filter(HitRecordDB.pzid == body.pzid)
+        .first()[0]
+    )
+    if prob_hit is None:
+        return {"status_code": 404, "detail": "Hit record not found"}
+    
+    #stat_data
+    stat_data = (
+        db.query(StatDataDB).filter(StatDataDB.pzid == body.pzid).first()
+    )
+
+    # z-score
+
+    def z_score(x, mean, std):
+        if std is None or std == 0:
+            return 0
+        return (x - mean) / std
+
+    #cal mtp
+    mt_list = []
+    avg_ab = (
+        db.query(AvgABDB).filter(AvgABDB.pzid == body.pzid).first()
+    )
+    avg_a_list = avg_ab.list_avg_a
+    avg_b_list = avg_ab.list_avg_b
+
+    for i in range(len(body.fitts_ids)):
+        mt = (
+            avg_a_list[i]
+            + (avg_b_list[i] * body.fitts_ids[i])
+        )
+        mt_list.append(mt)
+    mtp = np.percentile(mt_list, 75)
+
+    #ค่าของ feature,ค่าเฉลี่ย,ส่วนเบี่ยงเบนมาตรฐาน
+    z_a = z_score(body.action_count, stat_data.avg_a, stat_data.sd_a)
+    z_t = z_score(body.play_time, stat_data.avg_t, stat_data.sd_t)
+    z_mtp = z_score(mtp, stat_data.avg_mtp, stat_data.sd_mtp)
+
+    #P(fail)
+    def sigmoid(x):
+        return 1 / (1 + np.exp(-x))
+    
+    def z_dist(w1, w2, w3, zT, zA, zMTq):
+        return np.sqrt(
+        w1 * (zT ** 2) +
+        w2 * (zA ** 2) +
+        w3 * (zMTq ** 2)
+    )
+
+    p_fail = sigmoid(0.5 * ( z_dist(2,3,5,z_t,z_a,z_mtp) - 1.0))
+    
+    #expected_total_damage
+    prob_hit = (
+        db.query(HitRecordDB.prob_hit)
+        .filter(HitRecordDB.pzid == body.pzid)
+        .first()[0]
+    )
+    expected_total_damage = prob_hit * current_puzzle.total_hit * current_puzzle.dmg_per_hit
+    
+    # risk scaler
+    risk_scaler = (
+        1 + 1.5 * (1 - p_fail) * (expected_total_damage / 100))
+    
+    # next puzzle diff
+    next_puzzle_diff = current_puzzle.base_diff * risk_scaler
+
+    # next puzzle
+
+    next_puzzle = (
+        db.query(PuzzlesDB)
+        .filter(PuzzlesDB.pzid != body.pzid)
+        .order_by(func.abs(PuzzlesDB.base_diff - next_puzzle_diff))
+        .first()
+    )
+    if not next_puzzle:
+        db_item = {"status_code": 404, "detail": "Next puzzle not found"}
+    else:
+        db_item = {
+        "pzid": next_puzzle.pzid,
+        "name": next_puzzle.name,
+        "base_diff": next_puzzle.base_diff,
+        "total_hit": next_puzzle.total_hit,
+        "dmg_per_hit": next_puzzle.dmg_per_hit,
+        "next_puzzle_diff": float(next_puzzle_diff)
+    }
+    print(risk_scaler)
     return db_item
 
 #สร้างตารางในฐานข้อมูล
