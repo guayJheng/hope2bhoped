@@ -18,6 +18,9 @@ logs = db.query(
 
 data = []
 
+if len(logs) == 0:
+    raise ValueError("No training data found")
+
 for log in logs:
     data.append([
         log.pzid,
@@ -62,27 +65,38 @@ model = {
     "weights": w,
     "features": ["bias", "เวลาที่ใช้ในการแก้ Puzzle(log2_T)", "จำนวน Action(log2_A1)"],
 }
-with open("ols_model.pkl", "wb") as f:
+
+os.makedirs("../model", exist_ok=True)
+
+tmp_path = "../model/model_new.pkl"
+final_path = "../model/model_current.pkl"
+
+with open(tmp_path, "wb") as f:
     pickle.dump(model, f)
 
+with open(tmp_path, "rb") as f:
+    _ = pickle.load(f)
 
-load_dotenv()
+# atomic
+os.replace(tmp_path, final_path)
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+#เชื่อมต่อ Supabase และอัปโหลดโมเดลไปยัง Supabase Storage
+supabase = create_client(
+    os.getenv("SUPABASE_URL"),
+    os.getenv("SUPABASE_SERVICE_KEY")
+)
 
-#connect to supabase
-supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-
-with open("ols_model.pkl", "rb") as f:
+with open(final_path, "rb") as f:
     supabase.storage.from_("models").upload(
-        "ols_model.pkl",
+        "model_current.pkl",
         f,
-        {"content-type": "application/octet-stream", "upsert": "true"},
-        
+        {
+            "content-type": "application/octet-stream",
+            "upsert": "true"
+        },
     )
 
-print("Upload success")
+print("Training + upload success")
 
 
 

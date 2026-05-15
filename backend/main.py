@@ -23,9 +23,9 @@ w0 = w1 = w2 = None
 BASE_DIR = Path(__file__).resolve().parent.parent
 TRAIN_PATH = BASE_DIR / "train.py"
 
-def run_train():
-    subprocess.run([sys.executable, str(TRAIN_PATH)], check=True)
-    load_model()  # reload หลัง train เสร็จ
+# def run_train():
+#     subprocess.run([sys.executable, str(TRAIN_PATH)], check=True)
+#     load_model()  # reload หลัง train เสร็จ
 
 def load_model():
     global model, weights, w0, w1, w2
@@ -60,11 +60,15 @@ app = FastAPI()
 def wake_up():
     return {"status": "ok"}
 
-@app.get("/train-model")
-def train_model(background_tasks: BackgroundTasks):
-    background_tasks.add_task(run_train)
-    return {"status": "training started"}
+# @app.get("/train-model")
+# def train_model(background_tasks: BackgroundTasks):
+#     background_tasks.add_task(run_train)
+#     return {"status": "training started"}
 
+@app.get("/reload-model")
+def reload_model_endpoint():
+    load_model()
+    return {"status": "reloaded"}
 
 @app.get("/get-puzzles", response_model=List[PuzzleResponse])
 def get_puzzles(db: Session = Depends(get_db)):

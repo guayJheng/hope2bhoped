@@ -26,6 +26,7 @@ dist/
 *.h5
 *.pt
 *.pth
+model/
 
 # IDE
 .vscode/
