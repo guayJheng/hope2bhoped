@@ -44,4 +44,4 @@ jobs:
 
       - name: Reload API model
         if: success()
-        run: curl -f https://rope.onrender.com/reload-model
+        run: curl -f https://hope2bhoped.onrender.com/reload-model
