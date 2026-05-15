@@ -2,14 +2,8 @@ name: Train Model Daily
 
 on:
   schedule:
-    # - cron: "0 17 * * *"  # 00:00 Thailand (UTC+7)
     - cron: "*/5 * * * *"
   workflow_dispatch:
-env:
-  SQLALCHEMY_DATABASE_URL: ${{ secrets.SQLALCHEMY_DATABASE_URL }}
-  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-  SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-  MODEL_URL: ${{ secrets.MODEL_URL }}
 jobs:
   train:
     runs-on: ubuntu-latest
