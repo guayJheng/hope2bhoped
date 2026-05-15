@@ -12,9 +12,9 @@ from fastapi import FastAPI, Depends, BackgroundTasks
 # from .schema import LogInputBase, PuzzleResponse, LogCreate, LogResponse, HitRecordResponse, Avg_AB_Response, GetNextPuzzleResponse
 # from .models import HitRecordDB, LogsDB, PuzzlesDB, AvgABDB, StatDataDB
 
-from database import Base, engine, get_db
-from schema import LogInputBase, PuzzleResponse, LogCreate, LogResponse, HitRecordResponse, Avg_AB_Response, GetNextPuzzleResponse
-from models import HitRecordDB, LogsDB, PuzzlesDB, AvgABDB, StatDataDB
+from backend.database import Base, engine, get_db
+from backend.schema import LogInputBase, PuzzleResponse, LogCreate, LogResponse, HitRecordResponse, Avg_AB_Response, GetNextPuzzleResponse
+from backend.models import HitRecordDB, LogsDB, PuzzlesDB, AvgABDB, StatDataDB
 
 model = None
 weights = None
