@@ -5,7 +5,7 @@ from pathlib import Path
 from sqlalchemy import func, select,   text
 from sqlalchemy.orm import Session
 
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, BackgroundTasks
 
 
 # from .database import Base, engine, SessionLocal, get_db
@@ -16,23 +16,30 @@ from database import Base, engine, get_db
 from schema import LogInputBase, PuzzleResponse, LogCreate, LogResponse, HitRecordResponse, Avg_AB_Response, GetNextPuzzleResponse
 from models import HitRecordDB, LogsDB, PuzzlesDB, AvgABDB, StatDataDB
 
+model = None
+weights = None
+w0 = w1 = w2 = None
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 TRAIN_PATH = BASE_DIR / "train.py"
 
-def load_model():
-    model_url = os.getenv("MODEL_URL")
+def run_train():
+    subprocess.run([sys.executable, str(TRAIN_PATH)], check=True)
+    load_model()  # reload หลัง train เสร็จ
 
-    response = requests.get(model_url)
+def load_model():
+    global model, weights, w0, w1, w2
+
+    response = requests.get(os.getenv("MODEL_URL"))
     response.raise_for_status()
 
-    return pickle.loads(response.content)
+    model = pickle.loads(response.content)
+    weights = model["weights"]
 
-model = load_model()
+    w0, w1, w2 = weights
+    print("Model loaded:", weights)
 
-weights = model["weights"]
-
-w0, w1, w2 = weights
+load_model()
 
 print("Model loaded with weights:", weights)
 
@@ -54,20 +61,11 @@ def wake_up():
     return {"status": "ok"}
 
 @app.get("/train-model")
-def train_model():
-    global model, weights, w0, w1, w2
-    subprocess.run(
-        [sys.executable, str(TRAIN_PATH)],
-        check=True
-    )
-    model = load_model()
-    weights = model["weights"]
-    w0, w1, w2 = weights
-    print("Reloaded weights:", weights)
-    return {
-        "status": "trained",
-        "weights": weights.tolist()
-    }
+def train_model(background_tasks: BackgroundTasks):
+    background_tasks.add_task(run_train)
+    return {"status": "training started"}
+
+
 @app.get("/get-puzzles", response_model=List[PuzzleResponse])
 def get_puzzles(db: Session = Depends(get_db)):
     db_item = db.query(PuzzlesDB).all()
