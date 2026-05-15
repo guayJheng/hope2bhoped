@@ -20,10 +20,15 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+            cd backend
+            pip install -r requirements.txt
+
 
       - name: Run training
-        run: python train.py
+        run: |
+            cd backend
+            python train.py
 
       - name: Reload API model
         if: success()
