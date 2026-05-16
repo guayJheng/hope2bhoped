@@ -211,15 +211,30 @@ def get_next_puzzle(
     
     # next puzzle diff
     next_puzzle_diff = current_puzzle.base_diff * risk_scaler
+    next_puzzle_diff = float(next_puzzle_diff)
 
     # next puzzle
 
-    next_puzzle = (
-        db.query(PuzzlesDB)
-        .filter(PuzzlesDB.pzid != body.pzid)
-        .order_by(func.abs(PuzzlesDB.base_diff - next_puzzle_diff))
-        .first()
-    )
+    if body.result:
+        next_puzzle = (
+            db.query(PuzzlesDB)
+            .filter(
+                PuzzlesDB.pzid != body.pzid,
+                PuzzlesDB.base_diff > next_puzzle_diff
+            )
+            .order_by(PuzzlesDB.base_diff.asc())
+            .first()
+        )
+    else:
+        next_puzzle = (
+            db.query(PuzzlesDB)
+            .filter(
+                PuzzlesDB.pzid != body.pzid,
+                PuzzlesDB.base_diff < next_puzzle_diff
+            )
+            .order_by(PuzzlesDB.base_diff.desc())
+            .first()
+        )
     if not next_puzzle:
         db_item = {"status_code": 404, "detail": "Next puzzle not found"}
     else:
