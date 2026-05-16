@@ -5,7 +5,8 @@ from pathlib import Path
 from sqlalchemy import func, select,   text
 from sqlalchemy.orm import Session
 
-from fastapi import FastAPI, Depends, BackgroundTasks
+from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
 
 
 # from .database import Base, engine, SessionLocal, get_db
@@ -55,6 +56,19 @@ def z_dist(w1, w2, w3, zT, zA, zMTq):
 
 
 app = FastAPI()
+
+origins = [
+    "https://itch.io",
+    "https://html-classic.itch.zone",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/wake-up")
 def wake_up():
