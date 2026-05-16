@@ -47,11 +47,10 @@ print("Model loaded with weights:", weights)
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
     
-def z_dist(w1, w2, w3, zT, zA, zMTq):
+def z_dist(w1, w2, zT, zA):
     return np.sqrt(
         w1 * (zT ** 2) +
-        w2 * (zA ** 2) +
-        w3 * (zMTq ** 2)
+        w2 * (zA ** 2)
     )
 
 
@@ -154,28 +153,12 @@ def get_next_puzzle(
         return (x - mean) / std
 
     #cal mtp
-    mt_list = []
-    avg_ab = (
-        db.query(AvgABDB).filter(AvgABDB.pzid == body.pzid).first()
-    )
-    if avg_ab is None:
-        return {"detail": "AvgAB not found"}
-
-    avg_a_list = avg_ab.list_avg_a
-    avg_b_list = avg_ab.list_avg_b
-
-    for a, b, fid in zip(avg_a_list, avg_b_list, body.fitts_ids):
-        mt = a + (b * fid)
-        mt_list.append(mt)
-    mtp = np.percentile(mt_list, 75)
-
     #ค่าของ feature,ค่าเฉลี่ย,ส่วนเบี่ยงเบนมาตรฐาน
     z_a = z_score(body.action_count, stat_data.avg_a, stat_data.sd_a)
     z_t = z_score(body.play_time, stat_data.avg_t, stat_data.sd_t)
-    z_mtp = z_score(mtp, stat_data.avg_mtp, stat_data.sd_mtp)
 
     #P(fail)
-    p_fail = sigmoid(0.5 * ( z_dist(w1,w2,w3,z_t,z_a,z_mtp) - 1.0))
+    p_fail = sigmoid(0.5 * ( z_dist(w1,w2,z_t,z_a) - 1.0))
     
     #expected_total_damage
 
@@ -207,7 +190,7 @@ def get_next_puzzle(
         "dmg_per_hit": next_puzzle.dmg_per_hit,
         "next_puzzle_diff": float(next_puzzle_diff)
     }
-    print("w:", w0 , w1 , w2 , w3)
+    print("w:", w0 , w1 , w2)
     print(risk_scaler)
     return db_item
 

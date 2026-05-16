@@ -22,12 +22,6 @@ class LogsDB(Base):
     hit_count = Column(Integer)
     result = Column(Boolean)
 
-class AvgABDB(Base):
-    __tablename__ = "avg_ab"
-
-    pzid = Column(Integer, primary_key=True, index=True)
-    list_avg_a = Column(Float)
-    list_avg_b = Column(Float)
 
 class HitRecordDB(Base):
     __tablename__ = "hit_record"
@@ -50,7 +44,5 @@ class StatDataDB(Base):
     pzid = Column(Integer, primary_key=True, index=True)
     avg_t = Column(Float)
     avg_a = Column(Float)
-    avg_mtp = Column(Float)
     sd_t = Column(Float)
     sd_a = Column(Float)
-    sd_mtp = Column(Float)
