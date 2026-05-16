@@ -14,8 +14,8 @@ from fastapi.middleware.cors import CORSMiddleware
 # from .models import HitRecordDB, LogsDB, PuzzlesDB, AvgABDB, StatDataDB
 
 from backend.database import Base, engine, get_db
-from backend.schema import LogInputBase, PuzzleResponse, LogCreate, LogResponse, HitRecordResponse, Avg_AB_Response, GetNextPuzzleResponse
-from backend.models import HitRecordDB, LogsDB, PuzzlesDB, AvgABDB, StatDataDB
+from backend.schema import LogInputBase, PuzzleResponse, LogCreate, LogResponse, HitRecordResponse, GetNextPuzzleResponse
+from backend.models import HitRecordDB, LogsDB, PuzzlesDB, StatDataDB
 
 model = None
 weights = None
