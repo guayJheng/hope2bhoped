@@ -19,9 +19,7 @@ class LogsDB(Base):
     pzid = Column(Integer, ForeignKey("puzzles.pzid"))
     play_time = Column(Float)
     action_count = Column(Integer)
-    list_movement_time = Column(JSON)
     hit_count = Column(Integer)
-    fitts_ids = Column(JSON)
     result = Column(Boolean)
 
 class AvgABDB(Base):
@@ -43,9 +41,7 @@ class LogInputDB(Base):
     pzid = Column(Integer, primary_key=True, index=True)
     play_time = Column(Float)
     action_count = Column(Integer) 
-    list_movement_time = Column(JSON)
     hit_count = Column(Integer)
-    fitts_ids = Column(JSON)
     result = Column(Boolean)
 
 class StatDataDB(Base):
