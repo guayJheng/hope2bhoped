@@ -2,30 +2,25 @@ name: Train Model Daily
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "0 */2 * * *"
   workflow_dispatch:
 jobs:
   train:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
       - name: Cache pip
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
-
       - name: Install dependencies
         run: pip install -r backend/requirements.txt
-
       - name: Run training
         env:
           PYTHONPATH: ${{ github.workspace }}
@@ -34,7 +29,6 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           MODEL_URL: ${{ secrets.MODEL_URL }}
         run: python train.py
-
       - name: Reload API model
         if: success()
         run: curl -X GET https://hope2bhoped.onrender.com/reload-model
