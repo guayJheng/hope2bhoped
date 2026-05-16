@@ -94,11 +94,6 @@ def get_logs(db: Session = Depends(get_db)):
     db_item = db.query(LogsDB).all()
     return db_item
 
-@app.get("/get-avg-ab/{pzid}", response_model=Avg_AB_Response)
-def get_avg_ab(pzid: int ,db: Session = Depends(get_db)):
-    db_item = db.query(AvgABDB).filter(AvgABDB.pzid == pzid).first()
-    return db_item
-
 
 @app.get("/get-hit-record/{pzid}", response_model=HitRecordResponse)
 def get_hit_record(pzid: int ,db: Session = Depends(get_db)):
