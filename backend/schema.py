@@ -9,16 +9,11 @@ class LogBase(BaseModel):
     hit_count: int
     result: bool
 
-# class PuzzleBase(BaseModel):
-#     pzid: int
-#     name: str
-#     base_diff: float
-#     total_hit: int
-#     dmg_per_hit: float
+class PuzzleBase(BaseModel):
+    pzid: int
+    name: str
+    base_diff: float
 
-# class HitRecordBase(BaseModel):
-#     pzid: int
-#     prob_hit: float
 
 class LogInputBase(BaseModel):
     pzid: int

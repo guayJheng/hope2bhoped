@@ -1,3 +1,4 @@
+from http.client import HTTPException
 import subprocess,sys,os,pickle,requests
 from typing import List
 import numpy as np
@@ -29,15 +30,17 @@ TRAIN_PATH = BASE_DIR / "train.py"
 #     load_model()  # reload หลัง train เสร็จ
 
 def load_model():
-    global model, weights, w0, w1, w2
+    global model, weights,base_difficulties , w0, w1, w2
 
     response = requests.get(os.getenv("MODEL_URL"))
     response.raise_for_status()
 
     model = pickle.loads(response.content)
     weights = model["weights"]
-
-    w0, w1, w2 = weights
+    base_difficulties = model["base_difficulties"]
+    w0 = float(weights["W_FAIL"]) 
+    w1 = float(weights["W_TIME"]) 
+    w2 = float(weights["W_ACTION"])
     print("Model loaded:", weights)
 
 load_model()
@@ -78,10 +81,53 @@ def wake_up():
 #     background_tasks.add_task(run_train)
 #     return {"status": "training started"}
 
+def load_model():
+    global model, weights
+
+    model_url = os.getenv("MODEL_URL")
+
+    if not model_url:
+        raise ValueError("MODEL_URL not set")
+
+    response = requests.get(model_url)
+    response.raise_for_status()
+
+    model = pickle.loads(response.content)
+
+    weights = model["weights"]
+
+    print("Model loaded:", weights)
+
+
 @app.get("/reload-model")
-def reload_model_endpoint():
+def reload_model_endpoint(
+    db: Session = Depends(get_db)
+):
+
     load_model()
-    return {"status": "reloaded"}
+
+    base_difficulties = model["base_difficulties"]
+
+    try:
+
+        for pzid, diff in base_difficulties.items():
+            db.query(PuzzlesDB)\
+              .filter(PuzzlesDB.pzid == pzid)\
+              .update({
+                  "base_diff": float(diff)
+              })
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+    return {
+        "status": "reloaded",
+        "updated": len(base_difficulties),
+        "puzzles": base_difficulties
+    }
 
 @app.get("/get-puzzles", response_model=List[PuzzleResponse])
 def get_puzzles(db: Session = Depends(get_db)):
