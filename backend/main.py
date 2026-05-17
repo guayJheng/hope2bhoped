@@ -216,6 +216,7 @@ def get_next_puzzle(
     # next puzzle
 
     if body.result:
+
         next_puzzle = (
             db.query(PuzzlesDB)
             .filter(
@@ -225,7 +226,16 @@ def get_next_puzzle(
             .order_by(PuzzlesDB.base_diff.asc())
             .first()
         )
+
+        if not next_puzzle:
+            next_puzzle = (
+                db.query(PuzzlesDB)
+                .order_by(PuzzlesDB.base_diff.desc())
+                .first()
+            )
+
     else:
+
         next_puzzle = (
             db.query(PuzzlesDB)
             .filter(
@@ -235,19 +245,30 @@ def get_next_puzzle(
             .order_by(PuzzlesDB.base_diff.desc())
             .first()
         )
-    if not next_puzzle:
-        db_item = {"status_code": 404, "detail": "Next puzzle not found"}
-    else:
-        db_item = {
+
+        if not next_puzzle:
+            next_puzzle = (
+                db.query(PuzzlesDB)
+                .order_by(PuzzlesDB.base_diff.asc())
+                .first()
+            )
+
+    # response
+    db_item = {
         "pzid": next_puzzle.pzid,
         "name": next_puzzle.name,
         "base_diff": next_puzzle.base_diff,
         "total_hit": next_puzzle.total_hit,
         "dmg_per_hit": next_puzzle.dmg_per_hit,
-        "next_puzzle_diff": float(next_puzzle_diff)
+        "next_puzzle_diff": next_puzzle_diff
     }
-    print("w:", w0 , w1 , w2)
-    print(risk_scaler)
+
+    print("w:", w0, w1, w2)
+    print("p_fail:", p_fail)
+    print("risk_scaler:", risk_scaler)
+    print("next_puzzle_diff:", next_puzzle_diff)
+    print("next_puzzle:", next_puzzle.pzid)
+
     return db_item
 
 #สร้างตารางในฐานข้อมูล
