@@ -146,6 +146,22 @@ def get_hit_record(pzid: int ,db: Session = Depends(get_db)):
     db_item = db.query(HitRecordDB).filter(HitRecordDB.pzid == pzid).first()
     return db_item
 
+@app.get("/get-easiest-puzzles")
+def get_easiest_puzzles(db: Session = Depends(get_db)):
+    puzzles = (
+        db.query(PuzzlesDB)
+        .order_by(PuzzlesDB.base_diff.asc())
+        .limit(2)
+        .all()
+    )
+
+    return [
+        {
+            "pzid": puzzle.pzid,
+            "base_diff": puzzle.base_diff
+        }
+        for puzzle in puzzles
+    ]
 
 @app.post("/add-log", response_model=LogResponse) 
 def add_log(log: LogCreate, db: Session = Depends(get_db)):
